@@ -333,11 +333,9 @@ end
 -- sanitize module (always loaded)
 dofile("lux_lib/modules/sanitize.lua")
 
--- auth module (loads if jwt_secret is set in config or .env)
-if _config.jwt_secret or (env and env.JWT_SECRET) then
-    dofile("lux_lib/modules/auth.lua")
-    log("auth loaded")
-end
+-- auth module (always loaded, works without secret but warns)
+dofile("lux_lib/modules/auth.lua")
+log("auth loaded")
 
 -- database
 if _config.db and _config.db ~= "" then
