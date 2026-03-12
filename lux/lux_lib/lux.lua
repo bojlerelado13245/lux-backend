@@ -13,9 +13,10 @@ if ok_signal then
 end
 
 -- ── Private state ──────────────────────────────────
-local _routes = {}
-local _config = {}
-local _db     = nil
+local _routes     = {}
+local _config     = {}
+local _db         = nil
+local _is_windows = package.config:sub(1,1) == "\\"
 
 -- ── Colors ─────────────────────────────────────────
 local c = {
@@ -116,7 +117,13 @@ local function setup_db(path)
         return nil
     end
     local folder = path:match("^(.+)/[^/]+$")
-    if folder then os.execute("mkdir -p " .. folder) end
+    if folder then
+        if _is_windows then
+            os.execute("mkdir " .. folder:gsub("/", "\\") .. " 2>nul")
+        else
+            os.execute("mkdir -p " .. folder)
+        end
+    end
     local dbconn = sqlite.open(path)
     log("db connected: " .. path)
     return {
@@ -283,10 +290,13 @@ end
 
 -- ── Route scanner ──────────────────────────────────
 local function load_routes()
-    local handle = io.popen("ls routes/*.lua 2>/dev/null")
+    local cmd = _is_windows and "dir /b routes\\*.lua 2>nul" or "ls routes/*.lua 2>/dev/null"
+    local handle = io.popen(cmd)
     if not handle then return end
     for file in handle:lines() do
-        local name = file:match("([^/]+)%.lua$")
+        -- on windows dir /b returns just the filename, not the full path
+        if _is_windows then file = "routes\\" .. file end
+        local name = file:match("([^/\\]+)%.lua$")
         log("loading route: " .. name)
         dofile(file)
     end

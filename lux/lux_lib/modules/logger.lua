@@ -3,7 +3,14 @@ local _log_file = nil
 
 if _log_target and type(_log_target) == "string" then
     local folder = _log_target:match("^(.+)/[^/]+$")
-    if folder then os.execute("mkdir -p " .. folder) end
+    if folder then
+        local is_windows = package.config:sub(1,1) == "\\"
+        if is_windows then
+            os.execute("mkdir " .. folder:gsub("/", "\\") .. " 2>nul")
+        else
+            os.execute("mkdir -p " .. folder)
+        end
+    end
     _log_file = io.open(_log_target, "a")
 end
 
