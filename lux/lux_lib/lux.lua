@@ -184,17 +184,17 @@ reply = function(status, body)
 end
 
 -- ── Path matcher ───────────────────────────────────
-local function escape_pattern(s)
-    return s:gsub("([%-%.%+%[%]%(%)%$%^%%%?%*])", "%%%1")
-end
-
 local function match_route(pattern, actual)
     local keys = {}
-    local escaped = escape_pattern(pattern)
-    local regex = escaped:gsub("%%:(%w+)", function(key)
+    -- extract param names first, then escape, then build regex
+    local regex = pattern:gsub(":(%w+)", function(key)
         keys[#keys + 1] = key
-        return "([^/]+)"
+        return "\0"  -- placeholder
     end)
+    -- escape special pattern chars
+    regex = regex:gsub("([%-%.%+%[%]%(%)%$%^%%%?%*])", "%%%1")
+    -- replace placeholders with captures
+    regex = regex:gsub("%z", "([^/]+)")
     local values = { actual:match("^" .. regex .. "$") }
     if #values == 0 then return nil end
     local params = {}
